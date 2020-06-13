@@ -20,6 +20,7 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -68,14 +69,10 @@ static inline double int64Bits2Double(uint64_t bits) {
   return f;
 }
 
-enum Status s2d_n(const char * buffer, const int len, double * result) {
-  if (len == 0) {
-    return INPUT_TOO_SHORT;
-  }
+uint32_t s2d(const char * buffer, double * result) {
   int m10digits = 0;
-  int e10digits = 0;
-  int dotIndex = len;
-  int eIndex = len;
+  int e10digits = 0; // Only used for the assert, should be optimized out
+  int dotDigitIndex = INT_MAX;
   uint64_t m10 = 0;
   int32_t e10 = 0;
   bool signedM = false;
@@ -85,58 +82,49 @@ enum Status s2d_n(const char * buffer, const int len, double * result) {
     signedM = true;
     i++;
   }
-  for (; i < len; i++) {
+  for (;; i++) {
     char c = buffer[i];
     if (c == '.') {
-      if (dotIndex != len) {
-        return MALFORMED_INPUT;
+      if (dotDigitIndex != INT_MAX) {
+          break;
       }
-      dotIndex = i;
+      dotDigitIndex = m10digits;
       continue;
     }
     if ((c < '0') || (c > '9')) {
       break;
     }
-    if (m10digits >= 17) {
-      return INPUT_TOO_LONG;
-    }
+    assert(m10digits < 17);
     m10 = 10 * m10 + (c - '0');
     if (m10 != 0) {
       m10digits++;
     }
   }
-  if (i < len && ((buffer[i] == 'e') || (buffer[i] == 'E'))) {
-    eIndex = i;
+  if ((buffer[i] == 'e') || (buffer[i] == 'E')) {
     i++;
-    if (i < len && ((buffer[i] == '-') || (buffer[i] == '+'))) {
+    if ((buffer[i] == '-') || (buffer[i] == '+')) {
       signedE = buffer[i] == '-';
       i++;
     }
-    for (; i < len; i++) {
+    for (;; i++) {
       char c = buffer[i];
       if ((c < '0') || (c > '9')) {
-        return MALFORMED_INPUT;
+          break;
       }
-      if (e10digits > 3) {
-        // TODO: Be more lenient. Return +/-Infinity or +/-0 instead.
-        return INPUT_TOO_LONG;
-      }
+      assert(e10digits <= 3);
       e10 = 10 * e10 + (c - '0');
       if (e10 != 0) {
         e10digits++;
       }
     }
   }
-  if (i < len) {
-    return MALFORMED_INPUT;
-  }
   if (signedE) {
     e10 = -e10;
   }
-  e10 -= dotIndex < eIndex ? eIndex - dotIndex - 1 : 0;
+  e10 -= m10digits > dotDigitIndex ? m10digits - dotDigitIndex : 0;
   if (m10 == 0) {
     *result = signedM ? -0.0 : 0.0;
-    return SUCCESS;
+    return i;
   }
 
 #ifdef RYU_DEBUG
@@ -150,13 +138,13 @@ enum Status s2d_n(const char * buffer, const int len, double * result) {
     // Number is less than 1e-324, which should be rounded down to 0; return +/-0.0.
     uint64_t ieee = ((uint64_t) signedM) << (DOUBLE_EXPONENT_BITS + DOUBLE_MANTISSA_BITS);
     *result = int64Bits2Double(ieee);
-    return SUCCESS;
+    return i;
   }
   if (m10digits + e10 >= 310) {
     // Number is larger than 1e+309, which should be rounded to +/-Infinity.
     uint64_t ieee = (((uint64_t) signedM) << (DOUBLE_EXPONENT_BITS + DOUBLE_MANTISSA_BITS)) | (0x7ffull << DOUBLE_MANTISSA_BITS);
     *result = int64Bits2Double(ieee);
-    return SUCCESS;
+    return i;
   }
 
   // Convert to binary float m2 * 2^e2, while retaining information about whether the conversion
@@ -219,7 +207,7 @@ enum Status s2d_n(const char * buffer, const int len, double * result) {
     // Final IEEE exponent is larger than the maximum representable; return +/-Infinity.
     uint64_t ieee = (((uint64_t) signedM) << (DOUBLE_EXPONENT_BITS + DOUBLE_MANTISSA_BITS)) | (0x7ffull << DOUBLE_MANTISSA_BITS);
     *result = int64Bits2Double(ieee);
-    return SUCCESS;
+    return i;
   }
 
   // We need to figure out how much we need to shift m2. The tricky part is that we need to take
@@ -231,7 +219,7 @@ enum Status s2d_n(const char * buffer, const int len, double * result) {
   printf("ieee_e2 = %d\n", ieee_e2);
   printf("shift = %d\n", shift);
 #endif
-  
+
   // We need to round up if the exact value is more than 0.5 above the value we computed. That's
   // equivalent to checking if the last removed bit was 1 and either the value was not just
   // trailing zeros or the result would otherwise be odd.
@@ -253,9 +241,5 @@ enum Status s2d_n(const char * buffer, const int len, double * result) {
   ieee_m2 &= (1ull << DOUBLE_MANTISSA_BITS) - 1;
   uint64_t ieee = (((((uint64_t) signedM) << DOUBLE_EXPONENT_BITS) | (uint64_t)ieee_e2) << DOUBLE_MANTISSA_BITS) | ieee_m2;
   *result = int64Bits2Double(ieee);
-  return SUCCESS;
-}
-
-enum Status s2d(const char * buffer, double * result) {
-  return s2d_n(buffer, strlen(buffer), result);
+  return i;
 }

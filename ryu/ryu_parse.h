@@ -17,6 +17,8 @@
 #ifndef RYU_PARSE_H
 #define RYU_PARSE_H
 
+#include <inttypes.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -29,18 +31,15 @@ extern "C" {
 // This implementation does not currently support -DRYU_OPTIMIZE_SIZE and always
 // compiles against the large lookup tables.
 
-enum Status {
-  SUCCESS,
-  INPUT_TOO_SHORT,
-  INPUT_TOO_LONG,
-  MALFORMED_INPUT
-};
+// Parse the characters from buffer, converting it into a double in
+// the result output parameter. Return the number of character read
+// from the buffer.
+uint32_t s2d(const char * buffer, double * result);
 
-enum Status s2d_n(const char * buffer, const int len, double * result);
-enum Status s2d(const char * buffer, double * result);
-
-enum Status s2f_n(const char * buffer, const int len, float * result);
-enum Status s2f(const char * buffer, float * result);
+// Parse the characters from buffer, converting it into a float in
+// the result output parameter. Return the number of character read
+// from the buffer.
+uint32_t s2f(const char * buffer, float * result);
 
 #ifdef __cplusplus
 }
