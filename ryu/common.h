@@ -19,6 +19,7 @@
 
 #include <assert.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <string.h>
 
 #if defined(_M_IX86) || defined(_M_ARM)
