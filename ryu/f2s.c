@@ -338,8 +338,10 @@ void f2s_buffered(float f, char* result) {
   result[index] = '\0';
 }
 
+#ifndef RYU_STRIP_ALLOCATING_FUNCTIONS
 char* f2s(float f) {
   char* const result = (char*) malloc(16);
   f2s_buffered(f, result);
   return result;
 }
+#endif

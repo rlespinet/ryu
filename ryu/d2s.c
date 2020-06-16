@@ -502,8 +502,10 @@ void d2s_buffered(double f, char* result) {
   result[index] = '\0';
 }
 
+#ifndef RYU_STRIP_ALLOCATING_FUNCTIONS
 char* d2s(double f) {
   char* const result = (char*) malloc(25);
   d2s_buffered(f, result);
   return result;
 }
+#endif

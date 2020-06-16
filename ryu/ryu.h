@@ -25,19 +25,27 @@ extern "C" {
 
 int d2s_buffered_n(double f, char* result);
 void d2s_buffered(double f, char* result);
+#ifndef RYU_STRIP_ALLOCATING_FUNCTIONS
 char* d2s(double f);
+#endif
 
 int f2s_buffered_n(float f, char* result);
 void f2s_buffered(float f, char* result);
+#ifndef RYU_STRIP_ALLOCATING_FUNCTIONS
 char* f2s(float f);
+#endif
 
 int d2fixed_buffered_n(double d, uint32_t precision, char* result);
 void d2fixed_buffered(double d, uint32_t precision, char* result);
+#ifndef RYU_STRIP_ALLOCATING_FUNCTIONS
 char* d2fixed(double d, uint32_t precision);
+#endif
 
 int d2exp_buffered_n(double d, uint32_t precision, char* result);
 void d2exp_buffered(double d, uint32_t precision, char* result);
+#ifndef RYU_STRIP_ALLOCATING_FUNCTIONS
 char* d2exp(double d, uint32_t precision);
+#endif
 
 #ifdef __cplusplus
 }
