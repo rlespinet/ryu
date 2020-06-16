@@ -10,7 +10,9 @@ cc_library(
     "d2fixed.c",
     "d2fixed_full_table.h",
     "d2s_full_table.h",
+    "d2s_full_table.c",
     "d2s_small_table.h",
+    "d2s_small_table.c",
     "d2s_intrinsics.h",
     "digit_table.h",
     "common.h",
@@ -25,7 +27,9 @@ cc_library(
     "s2f.c",
     "d2s_intrinsics.h",
     "d2s_full_table.h",
+    "d2s_full_table.c",
     "d2s_small_table.h",
+    "d2s_small_table.c",
     "f2s_intrinsics.h",
     "f2s_full_table.h",
     "common.h",
@@ -66,4 +70,3 @@ cc_library(
   testonly = True,
   visibility=["//ryu/tests:__pkg__"],
 )
-
